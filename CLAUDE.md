@@ -8,13 +8,15 @@ This is an offline speech-to-text web application that uses OpenAI's Whisper mod
 
 **Performance**: Transcribes **faster than real-time** (0.21x real-time factor) with GPU acceleration enabled.
 
+**New Feature**: Includes automated form-filling for Home Health Agency (HHA) assessments. Users read a structured script, and the application automatically populates a 5-question assessment form based on the transcribed responses.
+
 ## Architecture
 
 ### Three-Layer System
 
-1. **Frontend (public/)**: Simple HTML5/JavaScript interface using MediaRecorder API
-   - `index.html`: UI with record/stop buttons and transcript textarea
-   - `app.js`: Handles microphone capture, records WebM audio, and POSTs to server
+1. **Frontend (public/)**: HTML5/JavaScript interface using MediaRecorder API
+   - `index.html`: UI with record/stop buttons, transcript textarea, HHA assessment script display, and 5-question form
+   - `app.js`: Handles microphone capture, records WebM audio, POSTs to server, parses transcriptions, and auto-fills form fields
 
 2. **Backend (server.js)**: Express server with single `/transcribe` endpoint
    - Receives WebM audio via multipart upload (multer)
@@ -211,3 +213,117 @@ To update whisper.cpp binaries:
 - **No transcript file produced**: Check whisper stderr logs for model loading errors
 - **Slow processing**: Verify GPU acceleration is enabled in logs
 - **DLL not found errors**: Ensure all 5 DLLs are in whisper_engine/
+
+## HHA Assessment Form-Filling Feature
+
+### Overview
+The application includes automated form-filling for Home Health Agency (HHA) assessments. Users follow a structured script during recording, and the application automatically populates a 5-question assessment form based on keyword detection in the transcribed text.
+
+### Feature Components
+
+**1. Script Display (index.html)**
+- Collapsible script section showing the HHA assessment template
+- Users read this script during recording to ensure proper keyword detection
+- Click header to expand/collapse script view
+
+**2. Assessment Form (index.html)**
+- **Q1-Q4**: Radio buttons for Yes/No responses
+  - Q1: Beneficiary admitted directly from acute/post-acute facility
+  - Q2: Certification and F2F encounter by same physician
+  - Q3: HHA-generated records signed, dated, and incorporated
+  - Q4: Structural impairment present
+- **Q5**: Checkboxes for affected domains (conditional on Q4=Yes)
+  - Domains: Mobility, Self-care, Communication, Cognition, Sensory
+- Green highlighting and "Auto-filled" badges indicate auto-detected responses
+- All fields remain manually editable
+
+**3. Parsing Logic (app.js)**
+- `parseHHATranscription()`: Keyword-based detection using simple string matching
+- `extractDomains()`: Extracts domain keywords from transcript text
+- `parseAndFillHHAForm()`: Populates form fields with detected values
+- `updateQ5State()`: Enables/disables Q5 based on Q4 answer
+
+### Keyword Detection Rules
+
+**Q1 Detection:**
+- "was admitted" → Yes
+- "was not admitted" → No
+
+**Q2 Detection:**
+- "were performed by the same" → Yes
+- "were not performed by the same" → No
+
+**Q3 Detection:**
+- "we do have" → Yes
+- "we do not have" → No
+
+**Q4 Detection:**
+- "there is a structural impairment" → Yes
+- "there is no structural impairment" → No
+
+**Q5 Detection (only if Q4 = Yes):**
+- Searches for domain keywords: "mobility", "self-care", "communication", "cognition", "sensory"
+- Looks in section after "affects the following domains" or scans entire transcript
+- Checks all matching domains in form
+
+### User Flow
+
+1. User views the HHA assessment script on page
+2. User clicks "Record" and reads the script aloud, selecting [was/was not], [were/were not], [do/do not], [is/is no] options
+3. User clicks "Stop & Transcribe"
+4. Transcript appears in textarea
+5. Form auto-fills with detected responses (green highlighting + badges)
+6. User reviews and manually edits any fields as needed
+7. Q5 automatically enables/disables based on Q4 selection
+
+### Example Script Usage
+
+**Full Script:**
+```
+"I will now provide the assessment information for this patient. Regarding admission,
+the beneficiary was admitted to our home health agency directly from an acute care
+facility. For the certification process, the home health certification and face-to-face
+encounter were performed by the same physician. Concerning documentation, we do have
+HHA-generated records that have been signed, dated, and incorporated into the certifying
+physician's records. As for functional status, there is a structural impairment present.
+The structural impairment affects the following domains: mobility, self-care, and cognition."
+```
+
+**Expected Form Population:**
+- Q1: Yes (detected "was admitted")
+- Q2: Yes (detected "were performed by the same")
+- Q3: Yes (detected "we do have")
+- Q4: Yes (detected "there is a structural impairment")
+- Q5: Mobility, Self-care, Cognition checked (detected all three keywords)
+
+### Technical Notes
+
+- **Client-side parsing**: All form-filling logic runs in the browser (no server changes)
+- **Fuzzy matching**: Not implemented - relies on exact phrase matching for reliability
+- **Case-insensitive**: All text converted to lowercase before matching
+- **Conditional logic**: Q5 only enabled when Q4 = "Yes" (enforced via JavaScript event listeners)
+- **Manual override**: All auto-filled values can be changed by clicking different options
+- **Visual feedback**: Auto-filled questions show green border and badge
+- **No persistence**: Form data is not saved (demo/review only)
+
+### Troubleshooting HHA Feature
+
+**Form not auto-filling:**
+1. Open browser DevTools (F12) → Console tab
+2. Look for `Parsed HHA responses:` log entry
+3. Check which fields were detected (null = not detected)
+4. Verify your speech matched the expected phrases exactly
+
+**Wrong answers detected:**
+- Ensure you spoke the exact phrases from the script
+- Check transcript textarea to see what Whisper transcribed
+- Manually correct any incorrect auto-filled values
+
+**Q5 not enabling:**
+- Q5 only enables when Q4 is set to "Yes"
+- If Q4 auto-filled as "No", manually change it to "Yes" to enable Q5
+
+**Domains not detected in Q5:**
+- Verify you said "affects the following domains: [domain list]"
+- Check transcript for correct domain spellings
+- Manually check any missing domains in the form

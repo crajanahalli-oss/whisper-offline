@@ -9,6 +9,7 @@ An offline speech-to-text web application using OpenAI's Whisper model via whisp
 - **GPU Accelerated**: Automatic CUDA/OpenCL detection
 - **Simple Interface**: Record directly in your browser
 - **Privacy Focused**: All processing happens locally on your machine
+- **HHA Assessment Form**: Automated form-filling for Home Health Agency assessments with script-based voice recording
 
 ## Quick Start
 
@@ -48,10 +49,32 @@ npm start
 
 ## Usage
 
+### Basic Transcription
 1. Click **Record** to start capturing audio
 2. Speak into your microphone
 3. Click **Stop & Transcribe** to process
 4. View the transcript in the text area
+
+### HHA Assessment Form-Filling
+1. Read the **Home Health Agency Assessment Script** displayed on the page
+2. Click **Record** and speak following the script format
+3. Click **Stop & Transcribe** to process
+4. The form automatically fills with detected answers:
+   - Q1-Q4: Yes/No responses
+   - Q5: Affected domains (Mobility, Self-care, Communication, Cognition, Sensory)
+5. Review and manually edit any fields as needed
+6. Transcript is displayed alongside the form for reference
+
+**Example Script:**
+```
+"I will now provide the assessment information for this patient. Regarding admission,
+the beneficiary was admitted to our home health agency directly from an acute care
+facility. For the certification process, the home health certification and face-to-face
+encounter were performed by the same physician. Concerning documentation, we do have
+HHA-generated records that have been signed, dated, and incorporated into the certifying
+physician's records. As for functional status, there is a structural impairment present.
+The structural impairment affects the following domains: mobility, self-care, and cognition."
+```
 
 ## Architecture
 

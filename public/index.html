@@ -13,11 +13,123 @@
       :root { color-scheme: light dark; } /* respect system light/dark */
       body {
         font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        max-width: 720px; margin: 2rem auto; padding: 0 1rem;
+        max-width: 900px; margin: 2rem auto; padding: 0 1rem;
       }
-      button { padding: 0.6rem 1rem; margin-right: 0.5rem; border-radius: 10px; border: 1px solid #8888; }
-      textarea { width: 100%; height: 240px; margin-top: 1rem; padding: 0.75rem; border-radius: 10px; border: 1px solid #8888; }
+      button { padding: 0.6rem 1rem; margin-right: 0.5rem; border-radius: 10px; border: 1px solid #8888; cursor: pointer; }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      textarea { width: 100%; height: 150px; margin-top: 1rem; padding: 0.75rem; border-radius: 10px; border: 1px solid #8888; font-family: monospace; font-size: 0.9rem; }
       .status { margin-left: 0.5rem; opacity: 0.8; }
+
+      /* Script display */
+      .script-section {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: #f5f5f5;
+        border-radius: 10px;
+        border: 2px solid #ddd;
+      }
+      .script-section h2 {
+        margin-top: 0;
+        font-size: 1.2rem;
+        color: #333;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .script-section h2:hover { color: #007bff; }
+      .script-content {
+        line-height: 1.8;
+        font-size: 1rem;
+        color: #444;
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+      }
+      .script-content.collapsed { display: none; }
+      .toggle-icon { font-size: 1.5rem; }
+
+      /* HHA Form */
+      .hha-form {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #f9f9f9;
+        border-radius: 10px;
+        border: 2px solid #ddd;
+      }
+      .hha-form h2 {
+        margin-top: 0;
+        font-size: 1.3rem;
+        color: #333;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+      }
+      .form-question {
+        margin: 1.5rem 0;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        border-left: 3px solid #ccc;
+      }
+      .form-question.auto-filled {
+        border-left-color: #28a745;
+        background: #f0fff4;
+      }
+      .form-question label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+      }
+      .radio-group {
+        display: flex;
+        gap: 1.5rem;
+        margin-top: 0.5rem;
+      }
+      .radio-group label {
+        display: inline-flex;
+        align-items: center;
+        font-weight: normal;
+        cursor: pointer;
+      }
+      .radio-group input[type="radio"] {
+        margin-right: 0.4rem;
+        cursor: pointer;
+      }
+      .checkbox-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.8rem;
+        margin-top: 0.5rem;
+      }
+      .checkbox-group label {
+        display: inline-flex;
+        align-items: center;
+        font-weight: normal;
+        cursor: pointer;
+      }
+      .checkbox-group input[type="checkbox"] {
+        margin-right: 0.4rem;
+        cursor: pointer;
+      }
+      .checkbox-group input[type="checkbox"]:disabled {
+        cursor: not-allowed;
+      }
+      .form-question.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+      }
+      .auto-fill-badge {
+        display: inline-block;
+        background: #28a745;
+        color: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+      }
     </style>
   </head>
 
@@ -25,7 +137,32 @@
     <h1>Whisper — Offline Speech → Text</h1>
 
     <!-- Short instruction for the test flow -->
-    <p>Click <b>Record</b>, speak, then click <b>Stop & Transcribe</b>.</p>
+    <p>Click <b>Record</b>, read the script below, then click <b>Stop & Transcribe</b> to auto-fill the HHA assessment form.</p>
+
+    <!-- HHA Assessment Script (Collapsible) -->
+    <div class="script-section">
+      <h2 onclick="toggleScript()">
+        <span>Home Health Agency Assessment Script</span>
+        <span class="toggle-icon" id="toggleIcon">▼</span>
+      </h2>
+      <div class="script-content" id="scriptContent">
+        <p><strong>Read the following script during your recording:</strong></p>
+        <p>
+          I will now provide the assessment information for this patient.
+          Regarding admission, the beneficiary <strong>[was/was not]</strong> admitted to our home health
+          agency directly from an acute or post-acute facility.
+          For the certification process, the home health certification and face-to-face
+          encounter <strong>[were/were not]</strong> performed by the same physician.
+          Concerning documentation, we <strong>[do/do not]</strong> have HHA-generated records that have
+          been signed, dated, and incorporated into the certifying physician's records.
+          As for functional status, there <strong>[is/is no]</strong> structural impairment present.
+          <em>[If structural impairment exists:]</em> The structural impairment affects the
+          following domains: <strong>[list domains such as mobility, self-care, communication,
+          cognition, and/or sensory function]</strong>.
+        </p>
+        <p><em>Example: "...the beneficiary was admitted...were performed by the same physician...we do have HHA-generated records...there is a structural impairment present. The structural impairment affects the following domains: mobility, self-care, and cognition."</em></p>
+      </div>
+    </div>
 
     <!-- Control bar: record/stop buttons and a small status label -->
     <div>
@@ -35,7 +172,78 @@
     </div>
 
     <!-- Where the transcript will be shown -->
-    <textarea id="output" placeholder="Transcript will appear here..."></textarea>
+    <div style="margin-top: 1.5rem;">
+      <label for="output" style="font-weight: 600; display: block; margin-bottom: 0.5rem;">Transcription:</label>
+      <textarea id="output" placeholder="Transcript will appear here..."></textarea>
+    </div>
+
+    <!-- HHA Assessment Form -->
+    <div class="hha-form">
+      <h2>Home Health Agency Assessment Form</h2>
+
+      <!-- Question 1 -->
+      <div class="form-question" id="q1-container">
+        <label>
+          Q1: Beneficiary admitted directly from acute/post-acute facility?
+          <span class="auto-fill-badge" id="q1-badge" style="display: none;">Auto-filled</span>
+        </label>
+        <div class="radio-group">
+          <label><input type="radio" name="q1" value="yes"> Yes</label>
+          <label><input type="radio" name="q1" value="no"> No</label>
+        </div>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="form-question" id="q2-container">
+        <label>
+          Q2: Certification and F2F encounter by same physician?
+          <span class="auto-fill-badge" id="q2-badge" style="display: none;">Auto-filled</span>
+        </label>
+        <div class="radio-group">
+          <label><input type="radio" name="q2" value="yes"> Yes</label>
+          <label><input type="radio" name="q2" value="no"> No</label>
+        </div>
+      </div>
+
+      <!-- Question 3 -->
+      <div class="form-question" id="q3-container">
+        <label>
+          Q3: HHA-generated records signed, dated, and incorporated?
+          <span class="auto-fill-badge" id="q3-badge" style="display: none;">Auto-filled</span>
+        </label>
+        <div class="radio-group">
+          <label><input type="radio" name="q3" value="yes"> Yes</label>
+          <label><input type="radio" name="q3" value="no"> No</label>
+        </div>
+      </div>
+
+      <!-- Question 4 -->
+      <div class="form-question" id="q4-container">
+        <label>
+          Q4: Structural impairment present?
+          <span class="auto-fill-badge" id="q4-badge" style="display: none;">Auto-filled</span>
+        </label>
+        <div class="radio-group">
+          <label><input type="radio" name="q4" value="yes"> Yes</label>
+          <label><input type="radio" name="q4" value="no"> No</label>
+        </div>
+      </div>
+
+      <!-- Question 5 -->
+      <div class="form-question disabled" id="q5-container">
+        <label>
+          Q5: Domains affected by structural impairment:
+          <span class="auto-fill-badge" id="q5-badge" style="display: none;">Auto-filled</span>
+        </label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" name="q5" value="mobility" disabled> Mobility</label>
+          <label><input type="checkbox" name="q5" value="self-care" disabled> Self-care</label>
+          <label><input type="checkbox" name="q5" value="communication" disabled> Communication</label>
+          <label><input type="checkbox" name="q5" value="cognition" disabled> Cognition</label>
+          <label><input type="checkbox" name="q5" value="sensory" disabled> Sensory</label>
+        </div>
+      </div>
+    </div>
 
     <!-- Frontend logic (records audio and posts it to the server) -->
     <script src="app.js"></script>
