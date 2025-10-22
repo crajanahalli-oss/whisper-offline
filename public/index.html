@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Whisper — Offline Speech → Text</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!--
+      Basic, inline styles just to keep this demo self-contained.
+      You can move these to a separate CSS file later if you want.
+    -->
+    <style>
+      :root { color-scheme: light dark; } /* respect system light/dark */
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        max-width: 720px; margin: 2rem auto; padding: 0 1rem;
+      }
+      button { padding: 0.6rem 1rem; margin-right: 0.5rem; border-radius: 10px; border: 1px solid #8888; }
+      textarea { width: 100%; height: 240px; margin-top: 1rem; padding: 0.75rem; border-radius: 10px; border: 1px solid #8888; }
+      .status { margin-left: 0.5rem; opacity: 0.8; }
+    </style>
+  </head>
+
+  <body>
+    <h1>Whisper — Offline Speech → Text</h1>
+
+    <!-- Short instruction for the test flow -->
+    <p>Click <b>Record</b>, speak, then click <b>Stop & Transcribe</b>.</p>
+
+    <!-- Control bar: record/stop buttons and a small status label -->
+    <div>
+      <button id="recordBtn">Record</button>
+      <button id="stopBtn" disabled>Stop & Transcribe</button>
+      <span class="status" id="status"></span>
+    </div>
+
+    <!-- Where the transcript will be shown -->
+    <textarea id="output" placeholder="Transcript will appear here..."></textarea>
+
+    <!-- Frontend logic (records audio and posts it to the server) -->
+    <script src="app.js"></script>
+  </body>
+</html>

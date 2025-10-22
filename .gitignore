@@ -1,0 +1,8 @@
+# Dependencies
+node_modules/
+
+# Temporary upload files
+uploads/
+
+# Whisper model files (too large for GitHub - download separately)
+whisper_engine/*.bin

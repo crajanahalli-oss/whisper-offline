@@ -1,0 +1,4 @@
+{
+    "claude-code.useTerminal": false,
+    "notebook.defaultFormatter": "Anthropic.claude-code"
+}
