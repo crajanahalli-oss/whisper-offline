@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whisper Transcriber Test - WASM Offline PWA</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      padding: 30px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .section h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-badge.pending {
+      background: #ffc107;
+      color: #000;
+    }
+
+    .status-badge.recording {
+      background: #dc3545;
+      color: white;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .status-badge.processing {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .status-badge.success {
+      background: #28a745;
+      color: white;
+    }
+
+    .status-badge.error {
+      background: #dc3545;
+      color: white;
+    }
+
+    .status-badge.loading {
+      background: #6c757d;
+      color: white;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .progress-container {
+      margin: 15px 0;
+      display: none;
+    }
+
+    .progress-container.visible {
+      display: block;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 30px;
+      background: #e9ecef;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s ease;
+      width: 0%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .progress-text {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .transcript-box {
+      width: 100%;
+      min-height: 120px;
+      padding: 15px;
+      border: 2px solid #dee2e6;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      background: white;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .info-item {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+    }
+
+    .info-label {
+      color: #666;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      color: #333;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .info-value.success {
+      color: #28a745;
+    }
+
+    .info-value.error {
+      color: #dc3545;
+    }
+
+    .log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 15px;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+      line-height: 1.5;
+    }
+
+    .log-time {
+      color: #858585;
+    }
+
+    .log-info {
+      color: #4fc3f7;
+    }
+
+    .log-success {
+      color: #66bb6a;
+    }
+
+    .log-error {
+      color: #ef5350;
+    }
+
+    .log-warn {
+      color: #ffca28;
+    }
+
+    .alert {
+      padding: 12px 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .model-select {
+      padding: 10px;
+      border-radius: 6px;
+      border: 2px solid #dee2e6;
+      font-size: 14px;
+      width: 100%;
+      max-width: 300px;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎙️ Whisper Transcriber Test</h1>
+    <p class="subtitle">Test WASM-based speech-to-text with Transformers.js</p>
+
+    <!-- Model Selection -->
+    <div class="section">
+      <h2>
+        🤖 Model Selection
+        <span id="model-status" class="status-badge pending">Not Loaded</span>
+      </h2>
+      <select id="modelSelect" class="model-select">
+        <option value="Xenova/whisper-tiny.en">Whisper Tiny EN (~75MB, fastest)</option>
+        <option value="Xenova/whisper-base.en">Whisper Base EN (~142MB, balanced)</option>
+        <option value="distil-whisper/distil-small.en" selected>Distil-Whisper Small EN (~240MB, fast + accurate) ⭐</option>
+        <option value="Xenova/whisper-small.en">Whisper Small EN (~466MB, very accurate)</option>
+      </select>
+      <div class="alert alert-info">
+        💡 <strong>Recommended:</strong> Distil-Whisper Small offers the best balance - 4.2x faster than regular Whisper Small with near-equal accuracy (within 1% WER).<br>
+        <strong>First Run:</strong> Model will download (30-90 sec depending on size). Subsequent runs use cached model (instant).
+      </div>
+    </div>
+
+    <!-- Recording Controls -->
+    <div class="section">
+      <h2>
+        🎤 Recording Controls
+        <span id="record-status" class="status-badge pending">Ready</span>
+      </h2>
+      <div class="button-group">
+        <button id="recordBtn" class="btn-primary">
+          ⏺️ Start Recording
+        </button>
+        <button id="stopBtn" class="btn-danger" disabled>
+          ⏹️ Stop Recording
+        </button>
+        <button id="transcribeBtn" class="btn-success" disabled>
+          🚀 Transcribe Audio
+        </button>
+        <button id="clearBtn" class="btn-secondary">
+          🗑️ Clear All
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div id="progressContainer" class="progress-container">
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill">0%</div>
+        </div>
+        <div id="progressText" class="progress-text">Ready</div>
+      </div>
+
+      <div class="alert alert-info">
+        💡 <strong>Tip:</strong> Record 2-10 seconds of clear speech for best results.
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="section">
+      <h2>📊 Results</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-label">Recording Size</div>
+          <div class="info-value" id="recordingSize">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Audio Duration</div>
+          <div class="info-value" id="audioDuration">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Processing Time</div>
+          <div class="info-value" id="processingTime">-</div>
+        </div>
+        <div class="info-item">
+          <div class="info-label">Model Used</div>
+          <div class="info-value" id="modelUsed">-</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 20px; margin-bottom: 10px; color: #333;">Transcription:</h3>
+      <textarea id="transcriptBox" class="transcript-box" placeholder="Transcription will appear here..." readonly></textarea>
+    </div>
+
+    <!-- Processing Log -->
+    <div class="section">
+      <h2>📝 Processing Log</h2>
+      <div class="log" id="processingLog">
+        <div class="log-entry">
+          <span class="log-time">[Ready]</span>
+          <span class="log-info">Whisper transcriber test page loaded</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { transcriber } from './transcriber.js';
+    import { processAudioForWhisper } from './audio-processor.js';
+
+    // UI Elements
+    const modelSelect = document.getElementById('modelSelect');
+    const modelStatus = document.getElementById('model-status');
+    const recordBtn = document.getElementById('recordBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const transcribeBtn = document.getElementById('transcribeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const recordStatus = document.getElementById('record-status');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const transcriptBox = document.getElementById('transcriptBox');
+
+    // State
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordedBlob = null;
+    let processedAudio = null;
+    let recordingStartTime = null;
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', async () => {
+      log('info', 'Initializing Whisper transcriber...');
+
+      try {
+        await transcriber.init();
+        log('success', 'Transcriber initialized successfully');
+        modelStatus.textContent = 'Ready';
+        modelStatus.className = 'status-badge success';
+      } catch (error) {
+        log('error', `Failed to initialize transcriber: ${error.message}`);
+        modelStatus.textContent = 'Error';
+        modelStatus.className = 'status-badge error';
+      }
+    });
+
+    // Start Recording
+    recordBtn.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            audioChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          recordedBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+          stream.getTracks().forEach(track => track.stop());
+
+          const duration = (Date.now() - recordingStartTime) / 1000;
+
+          recordStatus.textContent = 'Recorded';
+          recordStatus.className = 'status-badge success';
+          recordBtn.disabled = false;
+          stopBtn.disabled = true;
+          transcribeBtn.disabled = false;
+
+          document.getElementById('recordingSize').textContent = formatBytes(recordedBlob.size);
+          document.getElementById('audioDuration').textContent = `${duration.toFixed(1)}s`;
+
+          log('success', `Recording stopped: ${formatBytes(recordedBlob.size)}, ${duration.toFixed(1)}s`);
+        };
+
+        recordingStartTime = Date.now();
+        mediaRecorder.start();
+
+        recordStatus.textContent = 'Recording';
+        recordStatus.className = 'status-badge recording';
+        recordBtn.disabled = true;
+        stopBtn.disabled = false;
+
+        log('info', 'Recording started...');
+      } catch (error) {
+        log('error', `Microphone access failed: ${error.message}`);
+        alert('Microphone access denied. Please allow microphone access and try again.');
+      }
+    });
+
+    // Stop Recording
+    stopBtn.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+    });
+
+    // Transcribe Audio
+    transcribeBtn.addEventListener('click', async () => {
+      if (!recordedBlob) {
+        log('error', 'No audio recorded');
+        return;
+      }
+
+      try {
+        transcribeBtn.disabled = true;
+        recordStatus.textContent = 'Processing';
+        recordStatus.className = 'status-badge processing';
+        progressContainer.classList.add('visible');
+
+        // Step 1: Process audio
+        log('info', 'Processing audio to 16kHz mono Float32Array...');
+        updateProgress(10, 'Processing audio...');
+
+        const startAudioProcess = Date.now();
+        processedAudio = await processAudioForWhisper(recordedBlob);
+        const audioProcessTime = Date.now() - startAudioProcess;
+
+        log('success', `Audio processed in ${audioProcessTime}ms (${processedAudio.length} samples)`);
+        updateProgress(30, 'Audio processed, initializing transcription...');
+
+        // Step 2: Transcribe
+        const selectedModel = modelSelect.value;
+        log('info', `Starting transcription with ${selectedModel}...`);
+
+        const startTranscribe = Date.now();
+
+        const result = await transcriber.transcribe(processedAudio, {
+          model: selectedModel,
+          language: 'en',
+          task: 'transcribe',
+          return_timestamps: false,
+          onProgress: (progress) => {
+            handleTranscriptionProgress(progress);
+          },
+        });
+
+        const transcribeTime = Date.now() - startTranscribe;
+        const totalTime = audioProcessTime + transcribeTime;
+
+        // Display results
+        transcriptBox.value = result.text;
+        document.getElementById('processingTime').textContent = `${(totalTime / 1000).toFixed(2)}s`;
+        document.getElementById('modelUsed').textContent = selectedModel.split('/')[1];
+
+        updateProgress(100, 'Complete!');
+        recordStatus.textContent = 'Complete';
+        recordStatus.className = 'status-badge success';
+        modelStatus.textContent = 'Loaded';
+        modelStatus.className = 'status-badge success';
+
+        log('success', `Transcription complete in ${(transcribeTime / 1000).toFixed(2)}s`);
+        log('success', `Total processing time: ${(totalTime / 1000).toFixed(2)}s`);
+        log('info', `Transcript: "${result.text}"`);
+
+        setTimeout(() => {
+          progressContainer.classList.remove('visible');
+        }, 3000);
+
+      } catch (error) {
+        log('error', `Transcription failed: ${error.message}`);
+        recordStatus.textContent = 'Error';
+        recordStatus.className = 'status-badge error';
+        updateProgress(0, `Error: ${error.message}`);
+
+        setTimeout(() => {
+          progressContainer.classList.remove('visible');
+        }, 5000);
+      } finally {
+        transcribeBtn.disabled = false;
+      }
+    });
+
+    // Clear All
+    clearBtn.addEventListener('click', () => {
+      recordedBlob = null;
+      processedAudio = null;
+      audioChunks = [];
+      transcriptBox.value = '';
+
+      recordStatus.textContent = 'Ready';
+      recordStatus.className = 'status-badge pending';
+      transcribeBtn.disabled = true;
+
+      document.getElementById('recordingSize').textContent = '-';
+      document.getElementById('audioDuration').textContent = '-';
+      document.getElementById('processingTime').textContent = '-';
+      document.getElementById('modelUsed').textContent = '-';
+
+      progressContainer.classList.remove('visible');
+      updateProgress(0, 'Ready');
+
+      log('info', 'Cleared all results');
+    });
+
+    // Handle transcription progress
+    function handleTranscriptionProgress(progress) {
+      const { status, message, progress: percent, text } = progress;
+
+      if (status === 'downloading') {
+        const p = Math.round((percent || 0) * 100);
+        updateProgress(30 + (p * 0.4), message); // 30-70%
+      } else if (status === 'loading') {
+        updateProgress(70, message);
+      } else if (status === 'transcribing') {
+        updateProgress(80, 'Transcribing...');
+        if (text) {
+          transcriptBox.value = text; // Show intermediate results
+        }
+      }
+
+      log('info', message || status);
+    }
+
+    // Update progress bar
+    function updateProgress(percent, text) {
+      progressFill.style.width = `${percent}%`;
+      progressFill.textContent = `${Math.round(percent)}%`;
+      progressText.textContent = text;
+    }
+
+    // Logging
+    function log(level, message) {
+      const logDiv = document.getElementById('processingLog');
+      const time = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+
+      const levelClass = `log-${level}`;
+      entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="${levelClass}">${message}</span>`;
+
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+
+      console.log(`[TranscriberTest] ${message}`);
+    }
+
+    // Helper: Format bytes
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+  </script>
+</body>
+</html>
