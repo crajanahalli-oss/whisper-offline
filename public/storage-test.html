@@ -1,0 +1,555 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Storage Manager Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      h1 { color: #007bff; }
+      .test-section {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: #f9f9f9;
+        border-radius: 10px;
+        border: 2px solid #ddd;
+      }
+      .test-section h2 {
+        margin-top: 0;
+        color: #333;
+      }
+      button {
+        padding: 0.6rem 1rem;
+        margin: 0.5rem 0.5rem 0.5rem 0;
+        border-radius: 8px;
+        border: 1px solid #007bff;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      button.secondary {
+        background: #6c757d;
+        border-color: #6c757d;
+      }
+      button.secondary:hover {
+        background: #545b62;
+      }
+      button.danger {
+        background: #dc3545;
+        border-color: #dc3545;
+      }
+      button.danger:hover {
+        background: #c82333;
+      }
+      .result {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+        font-family: monospace;
+        font-size: 0.85rem;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .result.success {
+        border-left-color: #28a745;
+        background: #f0fff4;
+      }
+      .result.error {
+        border-left-color: #dc3545;
+        background: #fff0f0;
+      }
+      .status {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+      }
+      .status.success {
+        background: #28a745;
+        color: white;
+      }
+      .status.error {
+        background: #dc3545;
+        color: white;
+      }
+      .status.pending {
+        background: #ffc107;
+        color: black;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .log-container {
+        margin-top: 2rem;
+        padding: 1rem;
+        background: #2d2d2d;
+        color: #0f0;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .log-entry {
+        margin: 0.2rem 0;
+      }
+      .log-time {
+        color: #888;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>🧪 Storage Manager Test Suite</h1>
+    <p>Test the hybrid storage system (Cache API + IndexedDB)</p>
+
+    <!-- Initialization Test -->
+    <div class="test-section">
+      <h2>1. Initialization Test</h2>
+      <p>Initialize storage manager and check connectivity</p>
+      <button id="testInitBtn">Initialize Storage</button>
+      <div id="init-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Storage Estimate Test -->
+    <div class="test-section">
+      <h2>2. Storage Estimate Test</h2>
+      <p>Check storage quota and usage</p>
+      <button id="testStorageEstimateBtn">Get Storage Info</button>
+      <div id="estimate-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Model Metadata Test -->
+    <div class="test-section">
+      <h2>3. Model Metadata Test</h2>
+      <p>Save, retrieve, and update model metadata</p>
+      <button id="testSaveModelBtn">Save Model Metadata</button>
+      <button class="secondary" id="testGetModelBtn">Get Model Metadata</button>
+      <button class="secondary" id="testUpdateModelUsedBtn">Update Last Used</button>
+      <button class="secondary" id="testGetAllModelsBtn">Get All Models</button>
+      <div id="model-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Assessment Test -->
+    <div class="test-section">
+      <h2>4. Assessment CRUD Test</h2>
+      <p>Save, retrieve, and manage HHA assessments</p>
+      <button id="testSaveAssessmentBtn">Save Assessment</button>
+      <button class="secondary" id="testGetAllAssessmentsBtn">Get All Assessments</button>
+      <button class="secondary" id="testGetUnsyncedAssessmentsBtn">Get Unsynced</button>
+      <button class="secondary" id="testMarkSyncedBtn">Mark First as Synced</button>
+      <button class="danger" id="testDeleteOldAssessmentsBtn">Delete Old (30+ days)</button>
+      <div id="assessment-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Settings Test -->
+    <div class="test-section">
+      <h2>5. Settings Test</h2>
+      <p>Save and retrieve user settings</p>
+      <button id="testSaveSettingsBtn">Save Settings</button>
+      <button class="secondary" id="testGetSettingBtn">Get Setting</button>
+      <button class="secondary" id="testGetAllSettingsBtn">Get All Settings</button>
+      <div id="settings-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Export Test -->
+    <div class="test-section">
+      <h2>6. Export Test</h2>
+      <p>Export assessments as JSON</p>
+      <button id="testExportAssessmentsBtn">Export Assessments</button>
+      <button class="secondary" id="testStorageBreakdownBtn">Storage Breakdown</button>
+      <div id="export-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Cleanup Test -->
+    <div class="test-section">
+      <h2>7. Cleanup Test</h2>
+      <p>Clear cache and data (use with caution!)</p>
+      <button class="danger" id="testClearModelCacheBtn">Clear Model Cache</button>
+      <button class="danger" id="testClearAllDataBtn">Clear All Data ⚠️</button>
+      <div id="cleanup-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Console Log -->
+    <div class="log-container" id="log-container">
+      <strong>Console Log:</strong>
+      <div id="log-content"></div>
+    </div>
+
+    <script type="module">
+      import { storage } from './storage-manager.js';
+
+      // Make storage available globally for tests
+      window.storage = storage;
+      window.storageInitialized = false;
+
+      // Logging utility
+      function log(message, type = 'info') {
+        const time = new Date().toLocaleTimeString();
+        const logContent = document.getElementById('log-content');
+        const entry = document.createElement('div');
+        entry.className = 'log-entry';
+        entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+        logContent.appendChild(entry);
+        logContent.parentElement.scrollTop = logContent.parentElement.scrollHeight;
+      }
+
+      // Show result helper
+      function showResult(elementId, content, isSuccess = true) {
+        const el = document.getElementById(elementId);
+        el.innerHTML = content;
+        el.className = isSuccess ? 'result success' : 'result error';
+        el.style.display = 'block';
+      }
+
+      // Test 1: Initialize Storage
+      async function testInit() {
+        log('Testing storage initialization...');
+        try {
+          await storage.init();
+          window.storageInitialized = true;
+          showResult('init-result', `
+            <strong>✅ Storage Initialized Successfully</strong><br><br>
+            Cache API: Ready<br>
+            IndexedDB: Ready<br>
+            Database: ${storage.DB_NAME}<br>
+            Version: ${storage.DB_VERSION}
+          `, true);
+          log('✅ Storage initialized successfully', 'success');
+        } catch (error) {
+          showResult('init-result', `
+            <strong>❌ Initialization Failed</strong><br><br>
+            Error: ${error.message}<br>
+            <pre>${error.stack}</pre>
+          `, false);
+          log(`❌ Initialization failed: ${error.message}`, 'error');
+        }
+      }
+
+      // Test 2: Storage Estimate
+      async function testStorageEstimate() {
+        log('Getting storage estimate...');
+        try {
+          const estimate = await storage.getStorageEstimate();
+          if (estimate) {
+            showResult('estimate-result', `
+              <strong>📊 Storage Information</strong><br><br>
+              Usage: ${estimate.usageGB} GB<br>
+              Quota: ${estimate.quotaGB} GB<br>
+              Usage Percent: ${estimate.usagePercent.toFixed(2)}%<br>
+              Raw Usage: ${estimate.usage} bytes<br>
+              Raw Quota: ${estimate.quota} bytes
+            `, true);
+            log(`Storage: ${estimate.usageGB}GB / ${estimate.quotaGB}GB`, 'success');
+          } else {
+            showResult('estimate-result', 'Storage API not supported in this browser', false);
+            log('❌ Storage API not supported', 'error');
+          }
+        } catch (error) {
+          showResult('estimate-result', `Error: ${error.message}`, false);
+          log(`❌ Storage estimate failed: ${error.message}`, 'error');
+        }
+      }
+
+      // Test 3: Model Metadata
+      async function testSaveModel() {
+        log('Saving model metadata...');
+        try {
+          await storage.saveModelMetadata({
+            name: 'whisper-base.en',
+            version: '1.0.0',
+            sizeBytes: 180000000,
+            cacheKeys: ['https://example.com/model.onnx']
+          });
+          showResult('model-result', '✅ Model metadata saved successfully', true);
+          log('✅ Model metadata saved', 'success');
+        } catch (error) {
+          showResult('model-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Save model failed: ${error.message}`, 'error');
+        }
+      }
+
+      async function testGetModel() {
+        log('Getting model metadata...');
+        try {
+          const model = await storage.getModelMetadata('whisper-base.en');
+          if (model) {
+            showResult('model-result', `
+              <strong>📦 Model Metadata</strong><br><br>
+              <pre>${JSON.stringify(model, null, 2)}</pre>
+            `, true);
+            log('✅ Model metadata retrieved', 'success');
+          } else {
+            showResult('model-result', '❌ Model not found. Save it first.', false);
+            log('❌ Model not found', 'error');
+          }
+        } catch (error) {
+          showResult('model-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Get model failed: ${error.message}`, 'error');
+        }
+      }
+
+      async function testUpdateModelUsed() {
+        log('Updating model last used timestamp...');
+        try {
+          await storage.updateModelLastUsed('whisper-base.en');
+          showResult('model-result', '✅ Model last used timestamp updated', true);
+          log('✅ Model last used updated', 'success');
+        } catch (error) {
+          showResult('model-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Update model failed: ${error.message}`, 'error');
+        }
+      }
+
+      async function testGetAllModels() {
+        log('Getting all models...');
+        try {
+          const models = await storage.getAllModels();
+          showResult('model-result', `
+            <strong>📦 All Models (${models.length})</strong><br><br>
+            <pre>${JSON.stringify(models, null, 2)}</pre>
+          `, true);
+          log(`✅ Retrieved ${models.length} models`, 'success');
+        } catch (error) {
+          showResult('model-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Get all models failed: ${error.message}`, 'error');
+        }
+      }
+
+      // Test 4: Assessments
+      async function testSaveAssessment() {
+        log('Saving assessment...');
+        try {
+          const id = await storage.saveAssessment({
+            transcription: 'The beneficiary was admitted directly...',
+            formData: {
+              q1: 'yes',
+              q2: 'yes',
+              q3: 'yes',
+              q4: 'yes',
+              q5: ['mobility', 'cognition']
+            }
+          });
+          showResult('assessment-result', `✅ Assessment saved with ID: ${id}`, true);
+          log(`✅ Assessment saved with ID: ${id}`, 'success');
+        } catch (error) {
+          showResult('assessment-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Save assessment failed: ${error.message}`, 'error');
+        }
+      }
+
+      async function testGetAllAssessments() {
+        log('Getting all assessments...');
+        try {
+          const assessments = await storage.getAllAssessments();
+          showResult('assessment-result', `
+            <strong>📋 All Assessments (${assessments.length})</strong><br><br>
+            <pre>${JSON.stringify(assessments, null, 2)}</pre>
+          `, true);
+          log(`✅ Retrieved ${assessments.length} assessments`, 'success');
+        } catch (error) {
+          showResult('assessment-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Get assessments failed: ${error.message}`, 'error');
+        }
+      };
+
+      window.testGetUnsyncedAssessments = async function() {
+        log('Getting unsynced assessments...');
+        try {
+          const unsynced = await storage.getUnsyncedAssessments();
+          showResult('assessment-result', `
+            <strong>🔄 Unsynced Assessments (${unsynced.length})</strong><br><br>
+            <pre>${JSON.stringify(unsynced, null, 2)}</pre>
+          `, true);
+          log(`✅ Retrieved ${unsynced.length} unsynced assessments`, 'success');
+        } catch (error) {
+          showResult('assessment-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Get unsynced failed: ${error.message}`, 'error');
+        }
+      };
+
+      window.testMarkSynced = async function() {
+        log('Marking first assessment as synced...');
+        try {
+          const assessments = await storage.getAllAssessments();
+          if (assessments.length > 0) {
+            await storage.markAssessmentSynced(assessments[0].id);
+            showResult('assessment-result', `✅ Assessment ${assessments[0].id} marked as synced`, true);
+            log(`✅ Assessment ${assessments[0].id} marked as synced`, 'success');
+          } else {
+            showResult('assessment-result', '❌ No assessments to mark. Save one first.', false);
+            log('❌ No assessments found', 'error');
+          }
+        } catch (error) {
+          showResult('assessment-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Mark synced failed: ${error.message}`, 'error');
+        }
+      };
+
+      window.testDeleteOldAssessments = async function() {
+        log('Deleting old assessments (30+ days)...');
+        try {
+          const count = await storage.deleteOldAssessments(30);
+          showResult('assessment-result', `✅ Deleted ${count} old assessments`, true);
+          log(`✅ Deleted ${count} old assessments`, 'success');
+        } catch (error) {
+          showResult('assessment-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Delete old failed: ${error.message}`, 'error');
+        }
+      };
+
+      // Test 5: Settings
+      window.testSaveSettings = async function() {
+        log('Saving settings...');
+        try {
+          await storage.saveSetting('modelSize', 'base');
+          await storage.saveSetting('autoDownload', true);
+          await storage.saveSetting('keepDays', 30);
+          showResult('settings-result', '✅ Settings saved successfully', true);
+          log('✅ Settings saved', 'success');
+        } catch (error) {
+          showResult('settings-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Save settings failed: ${error.message}`, 'error');
+        }
+      };
+
+      window.testGetSetting = async function() {
+        log('Getting setting...');
+        try {
+          const value = await storage.getSetting('modelSize', 'default');
+          showResult('settings-result', `
+            <strong>⚙️ Setting Value</strong><br><br>
+            Key: modelSize<br>
+            Value: ${value}
+          `, true);
+          log(`✅ Setting retrieved: ${value}`, 'success');
+        } catch (error) {
+          showResult('settings-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Get setting failed: ${error.message}`, 'error');
+        }
+      };
+
+      window.testGetAllSettings = async function() {
+        log('Getting all settings...');
+        try {
+          const settings = await storage.getAllSettings();
+          showResult('settings-result', `
+            <strong>⚙️ All Settings</strong><br><br>
+            <pre>${JSON.stringify(settings, null, 2)}</pre>
+          `, true);
+          log(`✅ Retrieved ${Object.keys(settings).length} settings`, 'success');
+        } catch (error) {
+          showResult('settings-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Get all settings failed: ${error.message}`, 'error');
+        }
+      };
+
+      // Test 6: Export
+      window.testExportAssessments = async function() {
+        log('Exporting assessments...');
+        try {
+          const json = await storage.exportAssessments();
+          const blob = new Blob([json], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          showResult('export-result', `
+            <strong>📤 Export Ready</strong><br><br>
+            <a href="${url}" download="assessments.json" style="color: #007bff;">Download assessments.json</a><br><br>
+            <pre>${json.substring(0, 500)}...</pre>
+          `, true);
+          log('✅ Export generated', 'success');
+        } catch (error) {
+          showResult('export-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Export failed: ${error.message}`, 'error');
+        }
+      };
+
+      window.testStorageBreakdown = async function() {
+        log('Getting storage breakdown...');
+        try {
+          const breakdown = await storage.getStorageBreakdown();
+          showResult('export-result', `
+            <strong>📊 Storage Breakdown</strong><br><br>
+            <strong>Assessments:</strong> ${breakdown.assessments.count} items, ${breakdown.assessments.sizeMB} MB<br>
+            <strong>Models:</strong> ${breakdown.models.count} items, ${breakdown.models.sizeMB} MB<br>
+            <strong>Recordings:</strong> ${breakdown.recordings.count} items, ${breakdown.recordings.sizeMB} MB<br><br>
+            <pre>${JSON.stringify(breakdown, null, 2)}</pre>
+          `, true);
+          log('✅ Storage breakdown retrieved', 'success');
+        } catch (error) {
+          showResult('export-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Storage breakdown failed: ${error.message}`, 'error');
+        }
+      };
+
+      // Test 7: Cleanup
+      window.testClearModelCache = async function() {
+        if (!confirm('Are you sure you want to clear the model cache?')) return;
+        log('Clearing model cache...');
+        try {
+          await storage.clearModelCache();
+          showResult('cleanup-result', '✅ Model cache cleared successfully', true);
+          log('✅ Model cache cleared', 'success');
+        } catch (error) {
+          showResult('cleanup-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Clear cache failed: ${error.message}`, 'error');
+        }
+      };
+
+      window.testClearAllData = async function() {
+        if (!confirm('⚠️ This will delete ALL data (models, assessments, settings). Are you sure?')) return;
+        log('Clearing all data...');
+        try {
+          await storage.clearAllData();
+          showResult('cleanup-result', '✅ All data cleared successfully. Refresh the page.', true);
+          log('✅ All data cleared', 'success');
+        } catch (error) {
+          showResult('cleanup-result', `❌ Error: ${error.message}`, false);
+          log(`❌ Clear all data failed: ${error.message}`, 'error');
+        }
+      };
+
+      // Attach event listeners to buttons
+      document.getElementById('testInitBtn').addEventListener('click', testInit);
+      document.getElementById('testStorageEstimateBtn').addEventListener('click', testStorageEstimate);
+
+      document.getElementById('testSaveModelBtn').addEventListener('click', testSaveModel);
+      document.getElementById('testGetModelBtn').addEventListener('click', testGetModel);
+      document.getElementById('testUpdateModelUsedBtn').addEventListener('click', testUpdateModelUsed);
+      document.getElementById('testGetAllModelsBtn').addEventListener('click', testGetAllModels);
+
+      document.getElementById('testSaveAssessmentBtn').addEventListener('click', testSaveAssessment);
+      document.getElementById('testGetAllAssessmentsBtn').addEventListener('click', testGetAllAssessments);
+      document.getElementById('testGetUnsyncedAssessmentsBtn').addEventListener('click', testGetUnsyncedAssessments);
+      document.getElementById('testMarkSyncedBtn').addEventListener('click', testMarkSynced);
+      document.getElementById('testDeleteOldAssessmentsBtn').addEventListener('click', testDeleteOldAssessments);
+
+      document.getElementById('testSaveSettingsBtn').addEventListener('click', testSaveSettings);
+      document.getElementById('testGetSettingBtn').addEventListener('click', testGetSetting);
+      document.getElementById('testGetAllSettingsBtn').addEventListener('click', testGetAllSettings);
+
+      document.getElementById('testExportAssessmentsBtn').addEventListener('click', testExportAssessments);
+      document.getElementById('testStorageBreakdownBtn').addEventListener('click', testStorageBreakdown);
+
+      document.getElementById('testClearModelCacheBtn').addEventListener('click', testClearModelCache);
+      document.getElementById('testClearAllDataBtn').addEventListener('click', testClearAllData);
+
+      // Auto-initialize on page load
+      log('Test page loaded. Click "Initialize Storage" to begin.');
+    </script>
+  </body>
+</html>

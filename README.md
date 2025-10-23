@@ -2,6 +2,8 @@
 
 An offline speech-to-text web application using OpenAI's Whisper model via whisper.cpp. Transcribe audio **faster than real-time** (0.21x real-time factor) with GPU acceleration, entirely offline with no external API calls.
 
+> **📱 Mobile WASM Branch Available**: Check out the `feature/wasm-mobile-offline` branch for a browser-only WASM implementation that works on iOS/Android. See [CLAUDE-WASM.md](./CLAUDE-WASM.md) for details.
+
 ## Features
 
 - **Fully Offline**: No internet required after setup
