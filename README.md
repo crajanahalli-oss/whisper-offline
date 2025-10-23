@@ -63,12 +63,15 @@ npm start
 
 ### HHA Assessment Form-Filling
 
-1. Open http://localhost:3000 (main app - coming in Phase 6)
+1. Open http://localhost:3000 (main app - **now fully functional**)
 2. Read the **Home Health Agency Assessment Script**
 3. Click **Record** and speak following the script
 4. Click **Stop & Transcribe**
-5. Form auto-fills with detected responses
-6. Review and manually edit as needed
+5. Watch real-time progress (audio conversion → model download → transcription)
+6. Form auto-fills with detected responses
+7. Review and manually edit as needed
+
+**Note**: First run will download the Whisper model (~75MB for tiny.en) with progress indicator. Subsequent runs load instantly from cache.
 
 ## Architecture
 
@@ -119,8 +122,8 @@ All files are static HTML/JS/CSS served via `npx serve`. No Node.js backend, no 
 
 ```
 public/
-├── index.html              # Main app (HHA form) - Phase 6
-├── app.js                  # Main app logic - Phase 6
+├── index.html              # Main app (HHA form) ✅ Working
+├── app.js                  # Main app logic ✅ WASM integrated
 ├── storage-manager.js      # IndexedDB + Cache API wrapper
 ├── audio-processor.js      # Web Audio API processing
 ├── transcriber.js          # Main thread transcriber interface
@@ -163,9 +166,16 @@ npm start
 - ✅ **Phase 3**: Hybrid Storage (IndexedDB + Cache API)
 - ✅ **Phase 4**: Browser Audio Processing (Web Audio API)
 - ✅ **Phase 5**: WASM Transcription Engine (Transformers.js)
-- ⏳ **Phase 6**: Update Frontend (HHA form integration)
+- ✅ **Phase 6**: Frontend Integration (WASM integration complete, user-tested)
 - ⏳ **Phase 7**: PWA Configuration (manifest, service worker)
 - ⏳ **Phase 8-12**: Testing, optimization, documentation, deployment
+
+### Phase 6 Highlights (Latest)
+- 🎯 Main app at http://localhost:3000 now fully functional
+- 🚀 Complete WASM transcription pipeline integrated
+- 📊 Real-time progress indicators (download, conversion, transcription)
+- ✅ HHA assessment form auto-filling working
+- 🔒 Zero server dependency - runs 100% in browser
 
 ## Differences from Main Branch
 

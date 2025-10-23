@@ -1,16 +1,33 @@
-// Simple front-end controller for recording mic audio and
-// posting it to the server. The server does the Whisper work.
+/**
+ * WASM-based Whisper Offline PWA - Frontend Controller
+ *
+ * Fully client-side implementation - no server required!
+ * Uses Web Audio API for processing and Transformers.js for transcription
+ */
 
+// Import audio processor and transcriber
+import { processAudioForWhisper } from './audio-processor.js';
+import { transcriber } from './transcriber.js';
+
+// MediaRecorder state
 let mediaRecorder;      // browser MediaRecorder instance (handles mic capture)
 let chunks = [];        // recorded data chunks (WebM blobs)
 
-// Grab a few UI elements
+// UI Elements
 const recordBtn = document.getElementById("recordBtn");
 const stopBtn   = document.getElementById("stopBtn");
 const statusEl  = document.getElementById("status");
 const output    = document.getElementById("output");
 
-// Start recording from the microphone
+// Model selection (can be made configurable via UI later)
+const DEFAULT_MODEL = 'Xenova/whisper-tiny.en'; // Fast, good accuracy
+// Alternative models:
+// - 'Xenova/whisper-base.en' (better accuracy, slower)
+// - 'distil-whisper/distil-small.en' (fast with good accuracy)
+
+/**
+ * Start recording from the microphone
+ */
 recordBtn.onclick = async () => {
   try {
     // Ask for audio only (no video). Browser will show a permission prompt.
@@ -26,12 +43,12 @@ recordBtn.onclick = async () => {
       if (e.data && e.data.size > 0) chunks.push(e.data);
     };
 
-    // When recording stops, we assemble the blob and send it to the server
+    // When recording stops, we assemble the blob and process locally
     mediaRecorder.onstop = async () => {
       // Combine chunks into a single Blob with the correct MIME type
       const blob = new Blob(chunks, { type: "audio/webm" });
-      // POST the blob to the /transcribe endpoint (server will convert + run Whisper)
-      await sendForTranscription(blob);
+      // Process the blob locally (WASM transcription)
+      await processRecordingLocally(blob);
       // Stop the mic stream so the device light turns off
       stream.getTracks().forEach(t => t.stop());
     };
@@ -44,47 +61,97 @@ recordBtn.onclick = async () => {
   } catch (e) {
     console.error(e);
     // Most common issues: blocked mic permission, unsupported browser, or non-HTTPS origin
-    alert("Mic access failed. Use Chrome/Edge on http://localhost and allow microphone.");
+    alert("Mic access failed. Use Chrome/Edge/Firefox and allow microphone access.");
   }
 };
 
-// Stop recording and trigger upload/transcription
+/**
+ * Stop recording and trigger local transcription
+ */
 stopBtn.onclick = () => {
   if (mediaRecorder && mediaRecorder.state !== "inactive") {
     mediaRecorder.stop();                 // triggers onstop above
-    statusEl.textContent = "Processing…"; // UX hint while server works
+    statusEl.textContent = "Processing…"; // UX hint while processing
     recordBtn.disabled = false;
     stopBtn.disabled = true;
   }
 };
 
-// Helper: send the recorded audio to the server and update the textbox with the result
-async function sendForTranscription(blob) {
-  const form = new FormData();
-  // The field name "audio" must match the multer field name on the server
-  form.append("audio", blob, "clip.webm");
-
+/**
+ * Process the recorded audio locally using WASM
+ * @param {Blob} blob - Audio blob from MediaRecorder
+ */
+async function processRecordingLocally(blob) {
   try {
-    const res = await fetch("/transcribe", { method: "POST", body: form });
-    if (!res.ok) throw new Error(await res.text());
+    console.log('[App] Starting local transcription');
 
-    // Server returns { text: "…" }
-    const { text } = await res.json();
-    output.value = text || "";
+    // Step 1: Convert audio to format Whisper expects
+    statusEl.textContent = "Converting audio…";
+    const audioData = await processAudioForWhisper(blob);
+    console.log(`[App] Audio processed: ${audioData.length} samples`);
+
+    // Step 2: Transcribe using WASM Whisper
+    statusEl.textContent = "Loading model…";
+
+    const result = await transcriber.transcribe(audioData, {
+      model: DEFAULT_MODEL,
+      language: 'en',
+      task: 'transcribe',
+      return_timestamps: false,
+
+      // Progress callback for real-time updates
+      onProgress: (progress) => {
+        console.log('[App] Progress:', progress);
+
+        switch (progress.status) {
+          case 'loading':
+            statusEl.textContent = "Loading Whisper model…";
+            break;
+
+          case 'downloading':
+            const percent = (progress.progress * 100).toFixed(0);
+            const loadedMB = (progress.loaded / 1024 / 1024).toFixed(1);
+            const totalMB = (progress.total / 1024 / 1024).toFixed(1);
+            statusEl.textContent = `Downloading model: ${percent}% (${loadedMB}/${totalMB} MB)`;
+            break;
+
+          case 'transcribing':
+            statusEl.textContent = "Transcribing…";
+            // Could show partial text here if desired
+            // output.value = progress.text || '';
+            break;
+        }
+      }
+    });
+
+    // Step 3: Display the result
+    const transcriptText = result.text || '';
+    output.value = transcriptText;
     statusEl.textContent = "Done.";
 
-    // Parse the transcription and auto-fill the HHA form
-    if (text) {
-      parseAndFillHHAForm(text);
+    console.log('[App] Transcription complete:', transcriptText);
+
+    // Step 4: Parse and auto-fill HHA form
+    if (transcriptText) {
+      parseAndFillHHAForm(transcriptText);
     }
+
   } catch (err) {
-    console.error(err);
+    console.error('[App] Transcription error:', err);
     statusEl.textContent = "Transcription error.";
-    alert("Transcription failed. Check the server console for details.");
+    alert(`Transcription failed: ${err.message}\n\nCheck console for details.`);
   }
 }
 
-// Parse the transcription text and extract HHA assessment answers
+// ============================================================================
+// HHA Form-Filling Logic (unchanged from original implementation)
+// ============================================================================
+
+/**
+ * Parse the transcription text and extract HHA assessment answers
+ * @param {string} text - Transcribed text
+ * @returns {Object} - Parsed responses for Q1-Q5
+ */
 function parseHHATranscription(text) {
   const lowerText = text.toLowerCase();
 
@@ -132,7 +199,11 @@ function parseHHATranscription(text) {
   return responses;
 }
 
-// Extract domain keywords from transcription text
+/**
+ * Extract domain keywords from transcription text
+ * @param {string} text - Transcribed text (lowercase)
+ * @returns {Array<string>} - Array of detected domains
+ */
 function extractDomains(text) {
   const domains = [];
   const domainKeywords = ['mobility', 'self-care', 'self care', 'communication', 'cognition', 'sensory'];
@@ -151,7 +222,10 @@ function extractDomains(text) {
   return domains;
 }
 
-// Populate the HHA form with parsed responses
+/**
+ * Populate the HHA form with parsed responses
+ * @param {string} text - Transcribed text
+ */
 function parseAndFillHHAForm(text) {
   const responses = parseHHATranscription(text);
   console.log('Parsed HHA responses:', responses);
@@ -211,7 +285,10 @@ function parseAndFillHHAForm(text) {
   }
 }
 
-// Update Q5 enabled/disabled state based on Q4 answer
+/**
+ * Update Q5 enabled/disabled state based on Q4 answer
+ * @param {string} q4Value - 'yes' or 'no'
+ */
 function updateQ5State(q4Value) {
   const q5Container = document.getElementById('q5-container');
   const q5Checkboxes = document.querySelectorAll('input[name="q5"]');
@@ -231,7 +308,9 @@ function updateQ5State(q4Value) {
   }
 }
 
-// Script toggle function
+/**
+ * Script toggle function (for collapsible script section)
+ */
 function toggleScript() {
   const scriptContent = document.getElementById('scriptContent');
   const toggleIcon = document.getElementById('toggleIcon');
@@ -245,12 +324,27 @@ function toggleScript() {
   }
 }
 
-// Listen for Q4 changes to enable/disable Q5
+// Make toggleScript available globally (called from HTML onclick)
+window.toggleScript = toggleScript;
+
+// ============================================================================
+// Initialization
+// ============================================================================
+
+/**
+ * Initialize the app on page load
+ */
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('[App] WASM Whisper Offline PWA initialized');
+
+  // Listen for Q4 changes to enable/disable Q5
   const q4Radios = document.querySelectorAll('input[name="q4"]');
   q4Radios.forEach(radio => {
     radio.addEventListener('change', (e) => {
       updateQ5State(e.target.value);
     });
   });
+
+  console.log('[App] Model:', DEFAULT_MODEL);
+  console.log('[App] First transcription will download the model (~75MB for tiny.en)');
 });
