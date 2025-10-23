@@ -1,8 +1,8 @@
 # Dependencies
 node_modules/
 
-# Temporary upload files
-uploads/
+# Development
+.vscode/
+.DS_Store
 
-# Whisper model files (too large for GitHub - download separately)
-whisper_engine/*.bin
+# WASM branch note: uploads/ and whisper_engine/ deleted (server-side only)

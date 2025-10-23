@@ -1,25 +1,29 @@
 {
-  "name": "whisper-offline",
-  "version": "2.0.0-wasm",
-  "description": "Offline speech-to-text PWA with WASM Whisper for mobile devices",
-  "main": "index.js",
+  "name": "whisper-offline-wasm",
+  "version": "2.0.0",
+  "description": "Browser-based offline speech-to-text PWA using WASM Whisper (Transformers.js) for mobile devices",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "serve": "npx serve public -p 3000"
+    "start": "npx serve public -p 3000",
+    "dev": "npx serve public -p 3000"
   },
-  "keywords": ["whisper", "speech-to-text", "pwa", "offline", "wasm"],
+  "keywords": [
+    "whisper",
+    "speech-to-text",
+    "pwa",
+    "offline",
+    "wasm",
+    "transformers.js",
+    "browser",
+    "mobile",
+    "distil-whisper"
+  ],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
-    "express": "^5.1.0",
-    "multer": "^2.0.2",
-    "@xenova/transformers": "^2.17.2",
-    "idb": "^8.0.0",
-    "workbox-precaching": "^7.0.0",
-    "workbox-routing": "^7.0.0",
-    "workbox-strategies": "^7.0.0",
-    "workbox-expiration": "^7.0.0"
+    "serve": "^14.2.3"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
