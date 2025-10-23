@@ -2,7 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+---
+
+> **⚠️ WASM BRANCH NOTICE**
+>
+> You are on the **`feature/wasm-mobile-offline`** branch.
+>
+> This branch implements a **client-side WASM architecture** that runs entirely in the browser, NOT the server-based architecture described below.
+>
+> **📱 For WASM branch documentation, see [CLAUDE-WASM.md](./CLAUDE-WASM.md)**
+>
+> **Key Differences:**
+> - ❌ No Node.js/Express server
+> - ❌ No FFmpeg (replaced with Web Audio API)
+> - ❌ No whisper-cli.exe (replaced with Transformers.js WASM)
+> - ✅ Runs offline on mobile (iOS/Android)
+> - ✅ Progressive Web App (PWA)
+> - ✅ Client-side audio processing
+> - ✅ IndexedDB + Cache API storage
+>
+> The content below describes the **main branch** server-based architecture and is kept for reference and merge compatibility.
+
+---
+
+## Project Overview (Main Branch Architecture)
 
 This is an offline speech-to-text web application that uses OpenAI's Whisper model via whisper.cpp. The application captures audio from the browser, sends it to a Node.js/Express server, and processes it through a local Whisper engine to generate transcripts entirely offline (no external API calls).
 
