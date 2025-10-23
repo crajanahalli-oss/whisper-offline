@@ -478,8 +478,29 @@ console.log('Transcript:', result.text);
 **Unchanged** (from main branch):
 - `public/index.html` - HHA form interface (will be modified in Phase 6)
 - `public/app.js` - Frontend logic (will be modified in Phase 6)
-- `server.js` - Kept for backward compatibility
-- All whisper_engine files
+
+## Development Workflow
+
+### Phase Completion Process
+
+Every phase must follow this completion checklist before moving to the next phase:
+
+**1. Implementation** → **2. Testing** → **3. Cleanup** → **4. Documentation** → **5. Commit & Push**
+
+See the complete **Phase Completion Checklist** in [WASM-IMPLEMENTATION-PLAN.md](./WASM-IMPLEMENTATION-PLAN.md#phase-completion-checklist) - use it at the end of EVERY phase.
+
+**Key Principles:**
+- ✅ **Clean code**: Remove debug code and unused files after each phase
+- ✅ **Clean dependencies**: Only keep what's actually used in production
+- ✅ **Accurate documentation**: Distinguish user-tested vs automated tests
+- ✅ **Descriptive commits**: Include what was implemented and how it was tested
+- ✅ **No technical debt**: Don't defer cleanup to later - do it now
+
+**Why This Matters:**
+- Prevents accumulation of unused files and dependencies
+- Keeps codebase maintainable and understandable
+- Clear Git history makes debugging easier
+- No surprise cleanup tasks that disrupt development flow
 
 ## How to Switch Between Branches
 
