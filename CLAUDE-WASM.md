@@ -5,7 +5,7 @@ This file documents the WASM-based mobile offline implementation on the `feature
 ## Branch Overview
 
 **Branch**: `feature/wasm-mobile-offline`
-**Status**: Phase 6 Complete - Frontend Integration Complete
+**Status**: Phase 7 Complete - PWA Configuration Complete
 **Goal**: Convert server-based architecture to client-side WASM for mobile offline PWA support
 
 ## Current Capabilities (Phase 5)
@@ -118,6 +118,28 @@ The application now includes a complete browser-based Whisper transcription syst
 - ✅ Enhanced error handling with detailed user feedback
 - ✅ User-tested: Transcription confirmed working as expected
 - ✅ Zero server dependency - runs entirely in browser
+
+**9. PWA Configuration (Phase 7)**
+- ✅ Created `public/manifest.json` - Web app manifest with "Whisper Offline" branding
+- ✅ Created `public/service-worker.js` - Version-based cache management (v1)
+- ✅ Created `public/sw-register.js` - Service worker registration and install prompt handler
+- ✅ Updated `public/index.html` with PWA meta tags:
+  - iOS Safari support (apple-mobile-web-app-* meta tags)
+  - Android Chrome support (theme-color, mobile-web-app-capable)
+  - Manifest link and apple-touch-icon link
+  - Install prompt UI (hidden by default, shown when app is installable)
+- ✅ Updated `public/app.js` with install prompt logic
+- ✅ Generated 5 PWA icon files (192px, 512px, maskable versions, iOS 180px icon)
+- ✅ Configured offline caching strategies:
+  - **Cache-first** for app shell (HTML, JS modules)
+  - **Network-first** for CDN resources (idb, transformers.js)
+  - **Excludes** Transformers.js model URLs (no conflicts with library caching)
+  - **Preserves** `whisper-models-v1` cache (managed by storage-manager.js)
+- ✅ Version-based cache invalidation (increment VERSION constant to update)
+- ✅ Install prompt UI for Android Chrome (beforeinstallprompt API)
+- ✅ Manual install instructions for iOS Safari (Add to Home Screen)
+- ✅ Update notification when new service worker version deployed
+- ✅ User-tested: Manifest and icons verified in Chrome DevTools
 
 ### Technical Details
 
@@ -381,13 +403,38 @@ console.log('Transcript:', result.text);
 - Cached model load: Instant (subsequent runs)
 - Distil-Whisper: 4.2x faster than regular Whisper
 
-### Phase 6: PWA Configuration (Not Started)
-- Create `manifest.json`
-- Create `service-worker.js`
-- Add offline caching
-- iOS/Android install support
+### Phase 7: PWA Configuration ✅ COMPLETE
+- ✅ Created `public/manifest.json` with "Whisper Offline" branding
+- ✅ Created `public/service-worker.js` with version-based cache management
+- ✅ Created `public/sw-register.js` for registration and install prompts
+- ✅ Added PWA meta tags to index.html (iOS/Android support)
+- ✅ Configured offline caching strategies (cache-first for app shell)
+- ✅ Generated 5 PWA icons (192px, 512px, maskable, iOS 180px)
+- ✅ Implemented install prompt UI for Android Chrome
+- ✅ Added update notification when new version deployed
+- ✅ Tested in Chrome DevTools - manifest and icons verified
 
-### Phase 7-12: Testing, Optimization, Documentation, Deployment
+**Key Files**:
+- `public/manifest.json` - PWA manifest
+- `public/service-worker.js` - Cache management
+- `public/sw-register.js` - Registration logic
+- `public/icons/` - 5 icon files + README
+- `public/apple-touch-icon.png` - iOS home screen icon
+
+**Cache Strategy**:
+- **App Cache** (`whisper-app-v1`): HTML, JS modules
+- **CDN Cache** (`whisper-cdn-v1`): idb, transformers.js
+- **Model Cache** (`whisper-models-v1`): Managed by storage-manager.js (untouched)
+- Transformers.js model downloads: Excluded from service worker
+
+**PWA Features**:
+- Installable on Android Chrome (custom install button)
+- Installable on iOS Safari (manual "Add to Home Screen")
+- Offline-capable after installation
+- Update notification on new deployment
+- Version-based cache invalidation
+
+### Phase 8-12: Model Management UI, Mobile Testing, Optimization, Documentation, Deployment
 
 ## Testing
 
@@ -483,16 +530,30 @@ console.log('Transcript:', result.text);
 - `public/transcriber.js` (240+ lines) - Main thread transcriber interface
 - `public/transcriber-test.html` (700+ lines) - Transcription test suite with model selection
 
-**Modified Files**:
+**Phase 6 Files**:
+- Modified `public/app.js` - Integrated WASM transcription, removed server calls
+- Modified `public/index.html` - Added ES6 module support
+
+**Phase 7 Files**:
+- `public/manifest.json` (NEW) - PWA manifest with app metadata
+- `public/service-worker.js` (NEW, 200 lines) - Cache management with version control
+- `public/sw-register.js` (NEW, 180 lines) - Service worker registration and install prompts
+- `public/icons/` (NEW directory) - 5 PWA icon files + README
+  - `icon-192.png`, `icon-512.png` - Android icons
+  - `icon-maskable-192.png`, `icon-maskable-512.png` - Android adaptive icons
+  - `apple-touch-icon.png` - iOS home screen icon
+  - `README.md` - Icon generation guide
+- `public/apple-touch-icon.png` (NEW) - iOS icon (copy in root)
+- Modified `public/index.html` - Added PWA meta tags, manifest link, install prompt UI
+- Modified `public/app.js` - Added install prompt event handlers
+
+**Documentation Files**:
 - `package.json` - Added WASM dependencies (Phase 3)
 - `package-lock.json` - Dependency lock file (Phase 3)
 - `README.md` - Added WASM branch reference (Phase 3)
 - `CLAUDE.md` - Added WASM branch redirect header
-- `transcriber-test.html` - Added distil-whisper/distil-small.en model option (Phase 5)
-
-**Unchanged** (from main branch):
-- `public/index.html` - HHA form interface (will be modified in Phase 6)
-- `public/app.js` - Frontend logic (will be modified in Phase 6)
+- `WASM-IMPLEMENTATION-PLAN.md` - Updated with Phase 7 completion
+- `CLAUDE-WASM.md` - Updated with Phase 7 details
 
 ## Development Workflow
 

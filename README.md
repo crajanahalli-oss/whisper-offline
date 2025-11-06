@@ -7,13 +7,14 @@ A fully browser-based offline speech-to-text Progressive Web App using OpenAI's 
 ## Features
 
 - **🌐 100% Browser-Based**: No server, no Node.js, no FFmpeg - runs entirely in your browser
-- **📱 Mobile-First**: Works on iOS Safari and Android Chrome
+- **📱 Progressive Web App (PWA)**: Installable on iOS and Android home screens
 - **🔒 Fully Offline**: All processing happens locally after initial model download
 - **⚡ Fast & Efficient**: Uses Distil-Whisper for 4.2x faster transcription with near-equal accuracy
 - **💾 Persistent Storage**: IndexedDB + Cache API for offline data and model caching
 - **🎙️ Real-Time Processing**: Web Audio API for browser-native audio processing
 - **📊 HHA Assessment Form**: Automated form-filling for Home Health Agency assessments
 - **🎯 Privacy Focused**: Zero data leaves your device
+- **🔄 Auto-Updates**: Service worker provides automatic app updates
 
 ## Quick Start
 
@@ -44,6 +45,27 @@ npm start
 4. **Open your browser** to http://localhost:3000
 
 5. **First run**: The Whisper model will download automatically when you first transcribe (30-90 seconds). Subsequent runs load instantly from cache.
+
+### Installing as PWA (Optional)
+
+**On Android Chrome:**
+1. Open the app in Chrome
+2. Look for the install banner or tap the "Install" button in the app
+3. Confirm installation
+4. App icon will appear on your home screen
+
+**On iOS Safari:**
+1. Open the app in Safari
+2. Tap the Share button (square with arrow)
+3. Scroll and tap "Add to Home Screen"
+4. Tap "Add"
+5. App icon will appear on your home screen
+
+**Benefits of installing:**
+- Launch from home screen like a native app
+- Full-screen experience (no browser UI)
+- Faster startup with cached resources
+- Works completely offline after installation
 
 ## Usage
 
@@ -82,10 +104,19 @@ npm start
 - **Transcription**: Transformers.js (WASM Whisper)
 - **Storage**: Cache API (models) + IndexedDB (user data)
 - **Threading**: Web Workers for non-blocking transcription
+- **PWA**: Service Worker + Web App Manifest for offline support
 
 ### No Server Required
 
 All files are static HTML/JS/CSS served via `npx serve`. No Node.js backend, no FFmpeg, no native binaries.
+
+### PWA Architecture
+
+- **Service Worker**: Caches app shell (HTML, JS, CSS) for offline use
+- **Cache Strategy**: Cache-first for app files, network-first for CDN resources
+- **Version Control**: Automatic cache invalidation on app updates
+- **Install Prompts**: Native install experience on Android, manual on iOS
+- **Offline First**: Full functionality after initial model download
 
 ## Performance
 
@@ -123,7 +154,12 @@ All files are static HTML/JS/CSS served via `npx serve`. No Node.js backend, no 
 ```
 public/
 ├── index.html              # Main app (HHA form) ✅ Working
-├── app.js                  # Main app logic ✅ WASM integrated
+├── app.js                  # Main app logic ✅ WASM integrated + PWA install handlers
+├── manifest.json           # PWA manifest (app metadata)
+├── service-worker.js       # Service worker for offline caching
+├── sw-register.js          # Service worker registration
+├── apple-touch-icon.png    # iOS home screen icon
+├── icons/                  # PWA icons (192px, 512px, maskable)
 ├── storage-manager.js      # IndexedDB + Cache API wrapper
 ├── audio-processor.js      # Web Audio API processing
 ├── transcriber.js          # Main thread transcriber interface
@@ -167,15 +203,16 @@ npm start
 - ✅ **Phase 4**: Browser Audio Processing (Web Audio API)
 - ✅ **Phase 5**: WASM Transcription Engine (Transformers.js)
 - ✅ **Phase 6**: Frontend Integration (WASM integration complete, user-tested)
-- ⏳ **Phase 7**: PWA Configuration (manifest, service worker)
-- ⏳ **Phase 8-12**: Testing, optimization, documentation, deployment
+- ✅ **Phase 7**: PWA Configuration (manifest, service worker, icons, offline caching)
+- ⏳ **Phase 8-12**: Model Management UI, Mobile Testing, Optimization, Documentation, Deployment
 
-### Phase 6 Highlights (Latest)
-- 🎯 Main app at http://localhost:3000 now fully functional
-- 🚀 Complete WASM transcription pipeline integrated
-- 📊 Real-time progress indicators (download, conversion, transcription)
-- ✅ HHA assessment form auto-filling working
-- 🔒 Zero server dependency - runs 100% in browser
+### Phase 7 Highlights (Latest)
+- 📱 Full PWA support - installable on iOS and Android
+- 🔄 Service worker with offline-first caching
+- 🎨 PWA icons for all platforms (Android standard + maskable, iOS)
+- 📲 Install prompts for seamless native-like experience
+- ⚡ Auto-updates with version-based cache invalidation
+- ✅ Manifest and icons verified in Chrome DevTools
 
 ## Differences from Main Branch
 

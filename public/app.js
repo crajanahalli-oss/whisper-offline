@@ -208,7 +208,7 @@ function extractDomains(text) {
   const domains = [];
   const domainKeywords = ['mobility', 'self-care', 'self care', 'communication', 'cognition', 'sensory'];
 
-  // Find the section after "affects the following domains" or "following domains"
+  //  d the section after "affects the following domains" or "following domains"
   const domainsMatch = text.match(/(?:affects the following domains|following domains)[:\s]+(.*?)(?:\.|$)/i);
   const domainsSection = domainsMatch ? domainsMatch[1] : text;
 
@@ -328,6 +328,62 @@ function toggleScript() {
 window.toggleScript = toggleScript;
 
 // ============================================================================
+// PWA Install Prompt Logic
+// ============================================================================
+
+/**
+ * Handle PWA install prompt
+ */
+function initializeInstallPrompt() {
+  const installPrompt = document.getElementById('installPrompt');
+  const installBtn = document.getElementById('installBtn');
+  const dismissBtn = document.getElementById('dismissInstallBtn');
+
+  // Check if already installed
+  if (window.isInstalledPWA && window.isInstalledPWA()) {
+    console.log('[Install Prompt] App already installed as PWA');
+    return;
+  }
+
+  // Show install prompt when app becomes installable (Android Chrome)
+  window.addEventListener('appinstallable', () => {
+    console.log('[Install Prompt] Showing install prompt');
+    installPrompt.classList.add('visible');
+  });
+
+  // Handle install button click
+  installBtn.addEventListener('click', async () => {
+    console.log('[Install Prompt] Install button clicked');
+
+    if (window.showInstallPrompt) {
+      const accepted = await window.showInstallPrompt();
+      if (accepted) {
+        console.log('[Install Prompt] User accepted install');
+        installPrompt.classList.remove('visible');
+      }
+    } else {
+      console.warn('[Install Prompt] showInstallPrompt not available');
+      // Show iOS instructions if on iOS
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        alert('To install:\n1. Tap the Share button\n2. Tap "Add to Home Screen"');
+      }
+    }
+  });
+
+  // Handle dismiss button click
+  dismissBtn.addEventListener('click', () => {
+    console.log('[Install Prompt] Install prompt dismissed');
+    installPrompt.classList.remove('visible');
+  });
+
+  // Hide prompt when app is installed
+  window.addEventListener('appinstalled', () => {
+    console.log('[Install Prompt] App installed, hiding prompt');
+    installPrompt.classList.remove('visible');
+  });
+}
+
+// ============================================================================
 // Initialization
 // ============================================================================
 
@@ -344,6 +400,9 @@ document.addEventListener('DOMContentLoaded', () => {
       updateQ5State(e.target.value);
     });
   });
+
+  // Initialize PWA install prompt
+  initializeInstallPrompt();
 
   console.log('[App] Model:', DEFAULT_MODEL);
   console.log('[App] First transcription will download the model (~75MB for tiny.en)');

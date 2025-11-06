@@ -5,6 +5,14 @@
     <title>Whisper — Offline Speech → Text</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#007bff" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Whisper Offline" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
     <!--
       Basic, inline styles just to keep this demo self-contained.
       You can move these to a separate CSS file later if you want.
@@ -130,11 +138,59 @@
         font-weight: 600;
         margin-left: 0.5rem;
       }
+
+      /* Install Prompt */
+      .install-prompt {
+        display: none;
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #007bff;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        z-index: 10000;
+        max-width: 90%;
+        animation: slideUp 0.3s ease-out;
+      }
+      @keyframes slideUp {
+        from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+        to { transform: translateX(-50%) translateY(0); opacity: 1; }
+      }
+      .install-prompt.visible { display: flex; align-items: center; gap: 15px; }
+      .install-prompt button {
+        background: white;
+        color: #007bff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.1s;
+      }
+      .install-prompt button:hover { transform: scale(1.05); }
+      .install-prompt .dismiss-btn {
+        background: transparent;
+        color: white;
+        border: 1px solid white;
+        padding: 4px 8px;
+        font-size: 1.2rem;
+        line-height: 1;
+      }
     </style>
   </head>
 
   <body>
     <h1>Whisper — Offline Speech → Text</h1>
+
+    <!-- Install Prompt UI (shown when app is installable on Android) -->
+    <div class="install-prompt" id="installPrompt">
+      <span>Install Whisper Offline for easy access!</span>
+      <button id="installBtn">Install</button>
+      <button class="dismiss-btn" id="dismissInstallBtn">×</button>
+    </div>
 
     <!-- Short instruction for the test flow -->
     <p>Click <b>Record</b>, read the script below, then click <b>Stop & Transcribe</b> to auto-fill the HHA assessment form.</p>
@@ -247,5 +303,8 @@
 
     <!-- Frontend logic (WASM-based, runs entirely in browser) -->
     <script type="module" src="app.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script src="sw-register.js"></script>
   </body>
 </html>
